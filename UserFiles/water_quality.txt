@@ -1,0 +1,7 @@
+Date,Location,pH,Dissolved Oxygen (mg/L),Turbidity (NTU),Nitrate (mg/L),Phosphate (mg/L)
+2024-05-20,River A,7.2,8.5,5,0.3,0.05
+2024-05-21,River A,7.3,8.6,4.8,0.35,0.04
+2024-05-22,River A,7.1,8.4,5.2,0.32,0.06
+2024-05-20,Lake B,7.5,9,3,0.4,0.07
+2024-05-21,Lake B,7.4,8.9,3.1,0.38,0.08
+2024-05-22,Lake B,7.6,9.1,2.9,0.41,0.09

@@ -1,0 +1,7 @@
+Date,Location,pH,Nitrogen (mg/kg),Phosphorus (mg/kg),Potassium (mg/kg),Organic Matter (%)
+2024-05-20,Farm A,6.8,30,15,45,3.5
+2024-05-21,Farm A,6.7,32,14,46,3.6
+2024-05-22,Farm A,6.9,31,16,47,3.4
+2024-05-20,Field B,7.0,25,20,50,4.0
+2024-05-21,Field B,6.9,24,19,49,3.9
+2024-05-22,Field B,7.1,26,21,51,4.1
