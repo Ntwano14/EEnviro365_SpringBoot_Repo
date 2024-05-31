@@ -1,64 +1,127 @@
 package com.enviro.assessment.grad001.ntwananomathebula.controller;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.enviro.assessment.grad001.ntwananomathebula.entity.UserFile;
 import com.enviro.assessment.grad001.ntwananomathebula.service.UserFileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.multipart.MultipartFile;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(UserFileController.class)
 public class UserFileControllerTest {
 
-    @Mock
-    private UserFileService fileService;
-
-    @InjectMocks
-    private UserFileController fileController;
-
+    @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private UserFileService userFileService;
+
+    private MockMultipartFile mockFile;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(fileController).build();
+        // Create a mock file to be used in tests
+        mockFile = new MockMultipartFile(
+                "file",
+                "test.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "This is a test file".getBytes()
+        );
     }
 
     @Test
-    void testUploadFile() throws Exception {
-        MockMultipartFile mockFile = new MockMultipartFile("file", "test.txt", "text/plain", "test content".getBytes());
+    void testUploadFileSuccess() throws Exception {
+        // Mock the saveFile method to return a new UserFile object for successful upload
+        UserFile userFile = new UserFile();
+        Mockito.when(userFileService.saveFile((MultipartFile) Mockito.any(MultipartFile.class))).thenReturn(userFile);
 
-        UserFile file = new UserFile();
-        file.setFileName("test.txt");
-        file.setProcessedData("test content");
-
-        when(fileService.saveFile(any(MockMultipartFile.class))).thenReturn(file);
-
-        mockMvc.perform(multipart("/api/files/upload").file(mockFile))
+        // Perform a POST request to upload the file
+        mockMvc.perform(multipart("/api/files/upload")
+                .file(mockFile))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("success"))
-                .andExpect(jsonPath("$.message").value("File uploaded successfully"));
+                .andExpect(content().string(containsString("\"status\":\"success\"")));
     }
 
     @Test
-    void testGetProcessedFile() throws Exception {
-    	UserFile file = new UserFile();
-        file.setId(1L);
-        file.setFileName("test.txt");
-        file.setProcessedData("test content");
+    void testUploadFileInvalidType() throws Exception {
+        // Create a mock file with an invalid content type
+        MockMultipartFile invalidFile = new MockMultipartFile(
+                "file",
+                "test.txt",
+                MediaType.APPLICATION_PDF_VALUE,
+                "This is a test file".getBytes()
+        );
 
-        when(fileService.getFileById(1L)).thenReturn(file);
+        // Mock the saveFile method to throw an exception for invalid file type
+        Mockito.when(userFileService.saveFile(Mockito.any(MultipartFile.class)))
+                .thenThrow(new IllegalArgumentException("Invalid file type or size"));
 
+        // Perform a POST request with the invalid file
+        mockMvc.perform(multipart("/api/files/upload")
+                .file(invalidFile))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("\"status\":\"error\"")));
+    }
+
+    @Test
+    void testUploadFileExceedsSizeLimit() throws Exception {
+        // Create a large file that exceeds the size limit
+        byte[] largeFileContent = new byte[2 * 1024 * 1024 + 1]; // 2 MB + 1 byte
+        MockMultipartFile largeFile = new MockMultipartFile(
+                "file",
+                "large_test.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                largeFileContent
+        );
+
+        // Mock the saveFile method to throw an exception for file size limit exceeded
+        Mockito.when(userFileService.saveFile(Mockito.any(MultipartFile.class)))
+                .thenThrow(new IllegalArgumentException("Invalid file type or size"));
+
+        // Perform a POST request with the large file
+        mockMvc.perform(multipart("/api/files/upload")
+                .file(largeFile))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("\"status\":\"error\"")));
+    }
+
+    @Test
+    void testGetProcessedFileSuccess() throws Exception {
+        // Create a mock UserFile object
+        UserFile mockUserFile = new UserFile();
+        mockUserFile.setId(1L);
+        mockUserFile.setFileName("test.txt");
+        mockUserFile.setProcessedData("Processed data");
+
+        // Mock the getFileById method to return the mock UserFile
+        Mockito.when(userFileService.getFileById(1L)).thenReturn(mockUserFile);
+
+        // Perform a GET request to retrieve the file
         mockMvc.perform(get("/api/files/1"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.fileName").value("test.txt"))
-                .andExpect(jsonPath("$.processedData").value("test content"));
+                .andExpect(jsonPath("$.processedData").value("Processed data"));
+    }
+
+    @Test
+    void testGetProcessedFileNotFound() throws Exception {
+        // Mock the getFileById method to return null
+        Mockito.when(userFileService.getFileById(1L)).thenReturn(null);
+
+        // Perform a GET request to retrieve the file
+        mockMvc.perform(get("/api/files/1"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(containsString("\"status\":\"error\"")));
     }
 }

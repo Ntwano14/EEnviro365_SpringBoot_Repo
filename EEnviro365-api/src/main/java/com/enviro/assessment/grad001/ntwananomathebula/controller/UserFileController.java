@@ -1,92 +1,83 @@
 package com.enviro.assessment.grad001.ntwananomathebula.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
-import com.enviro.assessment.grad001.ntwananomathebula.dto.FileResponse;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.enviro.assessment.grad001.ntwananomathebula.entity.UserFile;
 import com.enviro.assessment.grad001.ntwananomathebula.service.UserFileService;
 
-/**
- * REST controller for handling file-related API requests.
- */
+import org.springframework.http.MediaType;
+
 @RestController
 @RequestMapping("/api/files")
+@Tag(name = "File Management", description = "API for managing file uploads and retrievals")
 public class UserFileController {
 
-	    @Autowired
-	    private UserFileService fileService;
+    @Autowired
+    private UserFileService fileService;
 
-	    /**
-	     * Handle file upload request.
-	     * 
-	     * @param file the file to upload
-	     * @return a ResponseEntity with the saved File entity
-	     */
-	    @PostMapping("/upload")
-	    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
-	        try {
-	            UserFile savedFile = fileService.saveFile(file);
-	            FileResponse fileResponse = new FileResponse(savedFile);
-	            return ResponseEntity.ok(createSuccessResponse("File uploaded successfully"));
-	        } catch (RuntimeException e) {
-	            return ResponseEntity.status(400).body(createErrorResponse(e.getMessage()));
-	        } catch (Exception e) {
-	            return ResponseEntity.status(500).body(createErrorResponse("Failed to upload file"));
-	        }
-	    }
+    /**
+     * Endpoint to upload a text file for processing.
+     * @param file The file to be uploaded.
+     * @return ResponseEntity with a status message.
+     */
+    @Operation(summary = "Upload a text file", description = "Uploads a text file for processing")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "File uploaded successfully",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(example = "{\"status\":\"success\", \"message\":\"File uploaded successfully\"}"))),
+        @ApiResponse(responseCode = "400", description = "Invalid file type or size",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(example = "{\"status\":\"error\", \"message\":\"Invalid file type or size\"}")))
+    })
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadFile(
+        @Parameter(description = "The file to be uploaded", required = true)
+        @RequestParam("file") MultipartFile file) {
+        try {
+            // Call the service to save the file
+            fileService.saveFile(file);
+            // Return success response
+            return ResponseEntity.ok().body("{\"status\":\"success\", \"message\":\"File uploaded successfully\"}");
+        } catch (Exception e) {
+            // Return error response if an exception occurs
+            return ResponseEntity.badRequest().body("{\"status\":\"error\", \"message\":\"" + e.getMessage() + "\"}");
+        }
+    }
 
-	    /**
-	     * Retrieve processed file data by ID.
-	     * 
-	     * @param id the ID of the file to retrieve
-	     * @return a ResponseEntity with a custom JSON response
-	     */
-	    @GetMapping("/{id}")
-	    public ResponseEntity<?> getProcessedFile(@PathVariable Long id) {
-	        try {
-	            UserFile file = fileService.getFileById(id);
-	            FileResponse fileResponse = new FileResponse(file);
-	            return ResponseEntity.ok(fileResponse);
-	        } catch (RuntimeException e) {
-	            return ResponseEntity.status(404).body(createErrorResponse(e.getMessage()));
-	        }
-	    }
-
-	    /**
-	     * Helper method to create a success response.
-	     * 
-	     * @param message the success message
-	     * @return a map representing the success response
-	     */
-	    private Map<String, Object> createSuccessResponse(String message) {
-	        Map<String, Object> response = new HashMap<>();
-	        response.put("status", "success");
-	        response.put("message", message);
-	        return response;
-	    }
-
-	    /**
-	     * Helper method to create an error response.
-	     * 
-	     * @param message the error message
-	     * @return a map representing the error response
-	     */
-	    private Map<String, Object> createErrorResponse(String message) {
-	        Map<String, Object> response = new HashMap<>();
-	        response.put("status", "error");
-	        response.put("message", message);
-	        return response;
-	    }
-	}
+    /**
+     * Endpoint to retrieve a processed file by its ID.
+     * @param id The ID of the file to retrieve.
+     * @return ResponseEntity with the file data or an error message.
+     */
+    @Operation(summary = "Get processed file by ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "File retrieved successfully",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = UserFile.class))),
+        @ApiResponse(responseCode = "404", description = "File not found",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(example = "{\"status\":\"error\", \"message\":\"File not found\"}")))
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProcessedFile(@PathVariable Long id) {
+        // Retrieve the file by its ID
+        UserFile file = fileService.getFileById(id);
+        if (file != null) {
+            // Return the file data if found
+            return ResponseEntity.ok(file);
+        } else {
+            // Return an error message if the file is not found
+            return ResponseEntity.status(404).body("{\"status\":\"error\", \"message\":\"File not found\"}");
+        }
+    }
+}

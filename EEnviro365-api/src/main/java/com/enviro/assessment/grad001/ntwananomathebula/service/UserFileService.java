@@ -71,7 +71,7 @@ public class UserFileService {
 	     */
 	    private void validateFile(MultipartFile file) {
 	        if (file.getSize() > MAX_FILE_SIZE) {
-	            throw new RuntimeException("File size exceeds the maximum limit of 2 MB");
+	            throw new RuntimeException("File size exceeds the maximum limit of 1 MB");
 	        }
 
 	        if (!file.getContentType().equals("text/plain")) {

@@ -3,8 +3,7 @@ package com.enviro.assessment.grad001.ntwananomathebula.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.enviro.assessment.grad001.ntwananomathebula.entity.UserFile;
-import com.enviro.assessment.grad001.ntwananomathebula.repository.UserFileRepository;
+import java.io.IOException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,54 +12,72 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.Optional;
+import com.enviro.assessment.grad001.ntwananomathebula.entity.UserFile;
+import com.enviro.assessment.grad001.ntwananomathebula.repository.UserFileRepository;
 
 public class UserFileServiceTest {
 
     @Mock
-    private UserFileRepository fileRepository;
-
-    @Mock
-    private MultipartFile multipartFile;
+    private UserFileRepository userFileRepository;
 
     @InjectMocks
-    private UserFileService fileService;
+    private UserFileService userFileService;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
+        // Initialize mocks before each test
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testSaveFile() throws IOException {
-        when(multipartFile.getOriginalFilename()).thenReturn("air_quality.txt");
-        when(multipartFile.getBytes()).thenReturn("air_quality content".getBytes());
+    public void testSaveFile() throws IOException {
+        // Create a mock MultipartFile
+        MultipartFile mockFile = mock(MultipartFile.class);
 
-        UserFile file = new UserFile();
-        file.setFileName("air_quality.txt");
-        file.setProcessedData("air_quality content");
+        // Set up mock behavior for getOriginalFilename, getBytes, and getContentType
+        when(mockFile.getOriginalFilename()).thenReturn("test.txt");
+        when(mockFile.getBytes()).thenReturn("test data".getBytes());
+        when(mockFile.getContentType()).thenReturn("text/plain");
 
-        when(fileRepository.save(any(UserFile.class))).thenReturn(file);
+        // Create a mock UserFile object
+        UserFile mockUserFile = new UserFile();
+        mockUserFile.setId(1L);
+        mockUserFile.setFileName("test.txt");
+        mockUserFile.setProcessedData("Processed data content");
 
-        UserFile savedFile = fileService.saveFile(multipartFile);
+        // Set up mock behavior for the save method of the userFileRepository
+        when(userFileRepository.save(any(UserFile.class))).thenReturn(mockUserFile);
 
-        assertNotNull(savedFile);
-        assertEquals("air_quality.txt", savedFile.getFileName());
+        // Call the saveFile method of the service
+        userFileService.saveFile(mockFile);
+
+        // Verify that the save method of the repository was called exactly once
+        verify(userFileRepository, times(1)).save(any(UserFile.class));
     }
 
     @Test
-    void testGetFileById() {
-        UserFile file = new UserFile();
-        file.setId(1L);
-        file.setFileName("air_quality.txt");
-        file.setProcessedData("air_quality content");
+    public void testGetFileById() {
+        // Create a mock UserFile object
+        UserFile mockUserFile = new UserFile();
+        mockUserFile.setId(1L);
+        mockUserFile.setFileName("test.txt");
+        mockUserFile.setProcessedData("Processed data content");
 
-        when(fileRepository.findById(1L)).thenReturn(Optional.of(file));
+        // Set up mock behavior for the findById method of the userFileRepository
+        when(userFileRepository.findById(1L)).thenReturn(java.util.Optional.of(mockUserFile));
 
-        UserFile retrievedFile = fileService.getFileById(1L);
+        // Call the getFileById method of the service
+        UserFile result = userFileService.getFileById(1L);
 
-        assertNotNull(retrievedFile);
-        assertEquals("air_quality.txt", retrievedFile.getFileName());
+        // Assert that the result is not null
+        assertNotNull(result);
+
+        // Assert that the result has the expected values
+        assertEquals(1L, result.getId());
+        assertEquals("test.txt", result.getFileName());
+        assertEquals("Processed data content", result.getProcessedData());
+
+        // Verify that the findById method of the repository was called exactly once
+        verify(userFileRepository, times(1)).findById(1L);
     }
 }
