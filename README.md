@@ -30,18 +30,3 @@ The File Management API is a RESTful web service that allows users to upload tex
 ```sh
 git clone https://github.com/your-username/file-management-api.git
 cd file-management-api
-
-Build the Project - mvn clean install
-Run the Application - mvn spring-boot:run
-
-The application will start and run on http://localhost:8080.
-
-API Documentation
-The API is documented using Swagger. Once the application is running, you can access the API documentation at: http://localhost:8080/swagger-ui.html
-
-Usage
-Uploading a File
-To upload a file, send a POST request to /api/files/upload with the file in the request body as multipart/form-data.
-
-Retrieving a Processed File
-To retrieve a processed file, send a GET request to /api/files/{id}, where {id} is the ID of the file.
