@@ -63,4 +63,14 @@ public class UserFile {
         this.processedData = processedData;
     }
 
+	public void setFileType(String string) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setFileContent(byte[] bytes) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
